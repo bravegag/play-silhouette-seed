@@ -1,5 +1,4 @@
 import com.typesafe.sbt.SbtScalariform._
-
 import scalariform.formatter.preferences._
 
 name := "play-silhouette-seed"
@@ -37,6 +36,17 @@ libraryDependencies ++= Seq(
   "org.joda" % "joda-convert" % "1.9.2",
   "com.github.tototoshi" %% "play-joda-routes-binder" % "1.3.1-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "8.0.16",
+  "org.apache.lucene" % "lucene-core" % "8.1.1",
+  "org.apache.lucene" % "lucene-queries" % "8.1.1",
+  "org.apache.lucene" % "lucene-analyzers-common" % "8.1.1",
+  "org.apache.lucene" % "lucene-highlighter" % "8.1.1",
+  "org.apache.lucene" % "lucene-queryparser" % "8.1.1",
+  "org.jsoup" % "jsoup" % "1.12.1",
+
+  // Scala equivalent of java's  @SuppressWarnings
+  compilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.4.0"),
+  "com.github.ghik" %% "silencer-lib" % "1.4.0" % Provided,
+
   "com.mohiva" %% "play-silhouette-testkit" % "6.0.1-SNAPSHOT" % "test",
   specs2 % Test,
   ehcache,
@@ -82,6 +92,7 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(FormatXml, false)
   .setPreference(DoubleIndentConstructorArguments, false)
   .setPreference(DanglingCloseParenthesis, Preserve)
+
 
 fork in Test := true
 javaOptions in Test += "-Dconfig.file=conf/application.test.conf"

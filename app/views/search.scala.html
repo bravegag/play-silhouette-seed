@@ -1,0 +1,51 @@
+@import play.api.data.Form
+@import play.api.i18n.Messages
+@import play.api.mvc.RequestHeader
+@import org.webjars.play.WebJarsUtil
+@import controllers.AssetsFinder
+@import forms.TotpForm.Data
+@import forms.TotpRecoveryForm
+@import java.util.UUID
+@import _root_.search.Searcher.SearchResult
+@import _root_.utils.Pagination
+@import play.twirl.api.Html
+
+@(searchResult: SearchResult, paginationOpt: Option[Pagination])(implicit request: RequestHeader, messages: Messages, webJarsUtil: WebJarsUtil, assets: AssetsFinder)
+
+@implicitFieldConstructor = @{ b3.vertical.fieldConstructor() }
+
+@main(messages("search.title")) {
+
+        <legend>@messages("search")</legend>
+        @helper.form(action = controllers.routes.SearchController.search("", "", 1), 'autocomplete -> "off") {
+            @helper.CSRF.formField
+            <div class="form-group">
+                <input type="text" name="searchQuery" class="form-control" value="@searchResult.searchQuery" />
+            </div>
+            <input type="hidden" name="lang" value="en" />
+            <div class="form-group">
+                <div>
+                    <button id="submit" type="submit" value="submit" class="btn btn-lg btn-primary btn-block">@messages("search")</button>
+                </div>
+            </div>
+        }
+
+        @if(searchResult.hits.isEmpty) {
+            <h1>No results for given query found</h1>
+        } else {
+            @for(hit <- searchResult.hits) {
+                <div style="margin-top: 15px;">
+                    <a href="/pages@hit.page.path">
+                    @Html(hit.titleHighlightedFragments.mkString("..."))
+                    </a>
+                </div>
+                <div>
+                    @Html(hit.bodyHighlightedFragments.mkString("..."))...
+                </div>
+            }
+        }
+
+        @if(paginationOpt.isDefined) {
+          @_pagination(paginationOpt.get)
+        }
+}

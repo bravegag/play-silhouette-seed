@@ -146,3 +146,13 @@ email.activate.account.subject = Activate account
 email.activate.account.hello = Hello {0},
 email.activate.account.html.text = Please follow <a href="{0}">this link</a> to confirm and activate your new account.
 email.activate.account.txt.text = Please follow the link to confirm and activate your new account: {0}
+
+# Search
+search=search
+search.title=Search
+
+# Pagination
+pagination.first = First
+pagination.previous = Previous
+pagination.next = Next
+pagination.last = Last

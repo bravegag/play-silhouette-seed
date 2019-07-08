@@ -1,5 +1,9 @@
 package modules
 
+import java.nio.file.Paths
+import java.util.concurrent.Executors
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
@@ -25,19 +29,28 @@ import com.mohiva.play.silhouette.password.{ BCryptPasswordHasher, BCryptSha256P
 import com.mohiva.play.silhouette.persistence.daos.{ AuthInfoDAO, DelegableAuthInfoDAO, InMemoryAuthInfoDAO }
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.typesafe.config.Config
+import configuration.ApplicationConfig
+import configuration.search.SearchConfig
+import javax.inject.Singleton
 import models.daos._
 import models.services._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.ValueReader
 import net.codingwell.scalaguice.ScalaModule
+import org.apache.lucene.analysis.standard.StandardAnalyzer
+import org.apache.lucene.store.{ FSDirectory }
 import play.api.Configuration
 import play.api.libs.openid.OpenIdClient
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Cookie, CookieHeaderEncoding }
 import providers.MyFacebookProvider
+import search.lucene.{ LuceneExecutionContext, LuceneIndex, LucenePageIndexer, LucenePagesIndexer, LuceneSearcher }
+import search.{ HtmlParser, HtmlParserImpl, PageLoaderImpl, PagesIndexer, PagesLoader, Searcher }
+import utils.FileIoExecutionContext
 import utils.auth.{ CustomSecuredErrorHandler, CustomUnsecuredErrorHandler, DefaultEnv }
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -93,7 +106,34 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     // replace this with the bindings to your concrete DAOs
     bind[DelegableAuthInfoDAO[OAuth1Info]].toInstance(new InMemoryAuthInfoDAO[OAuth1Info])
     bind[DelegableAuthInfoDAO[OpenIDInfo]].toInstance(new InMemoryAuthInfoDAO[OpenIDInfo])
+
+    bind[PagesLoader].to[PageLoaderImpl]
+    bind[LucenePageIndexer]
+    bind[PagesIndexer].to[LucenePagesIndexer]
+    bind[HtmlParser].to[HtmlParserImpl]
+    bind[Searcher].to[LuceneSearcher]
+
+    bind[Bootstrap].asEagerSingleton()
   }
+
+  /**
+   * Provide type safe application config.
+   *
+   * @param config
+   * @return
+   */
+  @Provides def getApplicationConfig(config: Configuration): ApplicationConfig =
+    config.get[ApplicationConfig]("application")
+
+  /**
+   * Provide type safe search config.
+   *
+   * @param applicationConfig
+   * @return
+   */
+  @Provides def getSearchConfig(
+    applicationConfig: ApplicationConfig): SearchConfig =
+    applicationConfig.search
 
   /**
    * Provides the HTTP layer implementation.
@@ -481,5 +521,57 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
     val settings = configuration.underlying.as[OpenIDSettings]("silhouette.yahoo")
     new YahooProvider(httpLayer, new PlayOpenIDService(client, settings), settings)
+  }
+
+  /**
+   * Provides LuceneExecutionContext
+   * @param applicationConfig
+   * @return
+   */
+  @Provides
+  def provideLuceneExecutionContext(
+    applicationConfig: ApplicationConfig): LuceneExecutionContext = {
+    LuceneExecutionContext(
+      ExecutionContext.fromExecutor(
+        Executors.newFixedThreadPool(
+          applicationConfig.lucene.executionContext.nThreads,
+          new ThreadFactoryBuilder()
+            .setNameFormat("lucene-thread-pool-%d")
+            .build()
+        )
+      )
+    )
+  }
+
+  /**
+   * Provides FileIoExecutionContext
+   * @param applicationConfig
+   * @return
+   */
+  @Provides
+  def provideFileIoExecutionContext(
+    applicationConfig: ApplicationConfig): FileIoExecutionContext = {
+    FileIoExecutionContext(
+      ExecutionContext.fromExecutor(
+        Executors.newFixedThreadPool(
+          applicationConfig.fileIoExecutionContext.nThreads,
+          new ThreadFactoryBuilder()
+            .setNameFormat("file-io-thread-pool-%d")
+            .build()
+        )
+      )
+    )
+  }
+
+  /**
+   * Provides lucene index directory and analyzer
+   * @return
+   */
+  @Provides
+  @Singleton
+  def provideLuceneIndex(applicationConfig: ApplicationConfig): LuceneIndex = {
+    val path = Paths.get(applicationConfig.lucene.indexDirectoryPath)
+    val indexDirectory = FSDirectory.open(path)
+    LuceneIndex(indexDirectory, new StandardAnalyzer())
   }
 }

@@ -38,6 +38,10 @@ POST        /password/change                 controllers.ChangePasswordControlle
 GET         /account/email/:email            controllers.ActivateAccountController.send(email: String)
 GET         /account/activate/:token         controllers.ActivateAccountController.activate(token: java.util.UUID)
 
+GET         /search                          controllers.SearchController.search(searchQuery: String ?= "", lang: String ?= "en", page: Int ?= 1, hitsPerPage: Option[Int] = None)
+
+GET         /pages/*file                     controllers.Assets.at(path="/public/html/indexable", file)
+
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                    controllers.Assets.versioned(file)
 ->          /webjars                         webjars.Routes

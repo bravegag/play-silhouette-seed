@@ -1,0 +1,71 @@
+@import play.api.i18n.MessagesProvider
+@import play.api.i18n.Messages
+@import _root_.utils.Pagination
+
+@(pagination: Pagination)(implicit messagesProvider: MessagesProvider, messages: Messages)
+<ul class="pagination">
+    <li>
+        <a
+            href="@{pagination.firstPage.map(pagination.urlWithPage).getOrElse("")}"
+            class="@{pagination.firstPage.map(_ => "").getOrElse("disabled")}"
+        >
+            @messages("pagination.first")
+        </a>
+    </li>
+
+    <li>
+        <a
+        href="@{pagination.startPageOfPrevRange.map(pagination.urlWithPage).getOrElse("")}"
+        class="@{pagination.startPageOfPrevRange.map(_ => "").getOrElse("disabled")}"
+        >
+            <<
+        </a>
+    </li>
+
+    <li>
+        <a
+        href="@{pagination.prevPage.map(pagination.urlWithPage).getOrElse("")}"
+        class="@{pagination.prevPage.map(_ => "").getOrElse("disabled")}"
+        >
+            <
+        </a>
+    </li>
+
+    @for(page <- Range.inclusive(pagination.startPageInCurrentRange, pagination.endPageInCurrentRange)) {
+        <li>
+            <a
+            href="@{if (pagination.currentPage == page) "" else pagination.urlWithPage(page)}"
+            class="@{if (pagination.currentPage == page) "disabled" else ""}"
+            >
+                @page
+            </a>
+        </li>
+    }
+
+    <li>
+        <a
+        href="@{pagination.nextPage.map(pagination.urlWithPage).getOrElse("")}"
+        class="@{pagination.nextPage.map(_ => "").getOrElse("disabled")}"
+        >
+            >
+        </a>
+    </li>
+
+    <li>
+        <a
+        href="@{pagination.startPageOfNextRange.map(pagination.urlWithPage).getOrElse("")}"
+        class="@{pagination.startPageOfNextRange.map(_ => "").getOrElse("disabled")}"
+        >
+            >>
+        </a>
+    </li>
+
+    <li>
+        <a
+        href="@{pagination.lastPage.map(pagination.urlWithPage).getOrElse("")}"
+        class="@{pagination.lastPage.map(_ => "").getOrElse("disabled")}"
+        >
+            @messages("pagination.last")
+        </a>
+    </li>
+</ul>
