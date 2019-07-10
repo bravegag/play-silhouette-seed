@@ -54,8 +54,8 @@ class LuceneSearcher @Inject() (
 
               val topDocs: TopDocs = collector.topDocs(startIndex, hitsPerPage)
 
-              val hits = topDocs.scoreDocs
-                .map { topDoc: ScoreDoc =>
+              val hits = topDocs.scoreDocs.zipWithIndex.map {
+                case (topDoc: ScoreDoc, i) =>
                   val page = luceneDocToPage(searcher.doc(topDoc.doc))
                   val titleHighlightedFragments =
                     getHighlightedFragments(
@@ -71,9 +71,8 @@ class LuceneSearcher @Inject() (
                       topDoc,
                       "body",
                       page.body)
-                  Hit(page, titleHighlightedFragments, bodyHighlightedFragments)
-                }
-                .to[scala.collection.immutable.List]
+                  Hit(startIndex + i + 1, page, titleHighlightedFragments, bodyHighlightedFragments)
+              }.to[scala.collection.immutable.List]
 
               val currentPage = if (hits.isEmpty) 0 else request.page
 

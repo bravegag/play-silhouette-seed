@@ -50,11 +50,15 @@ object Searcher {
     searchQuery: String)
 
   /**
-   * @param page
+   * Hit value object
+   *
+   * @param ix Index of the hit globally.
+   * @param page the page.
    * @param titleHighlightedFragments - fragments of title highlighted with matches of search query
    * @param bodyHighlightedFragments - fragments of body highlighted with matches of search query
    */
   case class Hit(
+    ix: Int,
     page: Page,
     titleHighlightedFragments: Seq[String],
     bodyHighlightedFragments: Seq[String])
